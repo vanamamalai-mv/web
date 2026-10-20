@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+<html ng-app="myapp">
+<head>
+    <title>Student Management with Animation</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-animate.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+        }
+
+        input {
+            margin: 5px;
+            padding: 6px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Animation when a student row enters */
+        tr.ng-enter {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        tr.ng-enter-active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 0.5s ease;
+        }
+
+        /* Animation when a student row leaves */
+        tr.ng-leave {
+            opacity: 1;
+        }
+
+        tr.ng-leave-active {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Animation for the search result */
+        .result.ng-enter {
+            opacity: 0;
+        }
+
+        .result.ng-enter-active {
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+
+<body ng-controller="myctl">
+
+    <h2>Student Management System</h2>
+
+    <h3>Add / Update Student</h3>
+
+    <input type="text" ng-model="name" placeholder="Student Name">
+    <input type="number" ng-model="m1" placeholder="Mark 1">
+    <input type="number" ng-model="m2" placeholder="Mark 2">
+
+    <button ng-click="save()">Save Student</button>
+
+    <hr>
+
+    <h3>Search Student by ID</h3>
+
+    <input type="number" ng-model="searchId" placeholder="Enter ID">
+    <button ng-click="search()">Search</button>
+
+    <div class="result" ng-if="foundStudent">
+        <p>ID: {{foundStudent.id}}</p>
+        <p>Name: {{foundStudent.name}}</p>
+        <p>Average: {{foundStudent.avg}}</p>
+    </div>
+
+    <p ng-if="searched && !foundStudent">
+        Student not found!
+    </p>
+
+    <hr>
+
+    <h3>Student List (Average >= 80)</h3>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Mark 1</th>
+            <th>Mark 2</th>
+            <th>Average</th>
+            <th>Action</th>
+        </tr>
+
+        <tr ng-repeat="s in students | filter:above80 track by s.id">
+            <td>{{s.id}}</td>
+            <td>{{s.name}}</td>
+            <td>{{s.m1}}</td>
+            <td>{{s.m2}}</td>
+            <td>{{s.avg}}</td>
+            <td>
+                <button ng-click="edit(s)">Edit</button>
+                <button ng-click="remove(s.id)">Delete</button>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        var app = angular.module("myapp", ["ngAnimate"]);
+
+        // Service
+        app.service("myservice", function() {
+            var students = [];
+            var nextId = 1;
+
+            this.add = function(s) {
+                s.id = nextId++;
+                students.push(s);
+            };
+
+            this.get = function() {
+                return students;
+            };
+
+            this.searchById = function(id) {
+                for (var i = 0; i < students.length; i++) {
+                    if (students[i].id == id) {
+                        return students[i];
+                    }
+                }
+                return null;
+            };
+
+            this.update = function(id, data) {
+                var s = this.searchById(id);
+
+                if (s) {
+                    s.name = data.name;
+                    s.m1 = data.m1;
+                    s.m2 = data.m2;
+                    s.avg = data.avg;
+                }
+            };
+
+            this.remove = function(id) {
+                for (var i = 0; i < students.length; i++) {
+                    if (students[i].id == id) {
+                        students.splice(i, 1);
+                        return;
+                    }
+                }
+            };
+        });
+
+        // Controller
+        app.controller("myctl", function($scope, myservice) {
+            $scope.students = myservice.get();
+            $scope.editId = null;
+            $scope.foundStudent = null;
+            $scope.searched = false;
+
+            $scope.save = function() {
+                if (!$scope.name ||
+                    $scope.m1 == null || $scope.m1 === "" ||
+                    $scope.m2 == null || $scope.m2 === "") {
+                    alert("Please enter all details");
+                    return;
+                }
+
+                var student = {
+                    name: $scope.name,
+                    m1: Number($scope.m1),
+                    m2: Number($scope.m2),
+                    avg: (Number($scope.m1) + Number($scope.m2)) / 2
+                };
+
+                if ($scope.editId === null) {
+                    myservice.add(student);
+                } else {
+                    myservice.update($scope.editId, student);
+                }
+
+                $scope.name = "";
+                $scope.m1 = null;
+                $scope.m2 = null;
+                $scope.editId = null;
+            };
+
+            $scope.search = function() {
+                $scope.searched = true;
+                $scope.foundStudent =
+                    myservice.searchById($scope.searchId);
+            };
+
+            $scope.edit = function(s) {
+                $scope.editId = s.id;
+                $scope.name = s.name;
+                $scope.m1 = s.m1;
+                $scope.m2 = s.m2;
+            };
+
+            $scope.remove = function(id) {
+                myservice.remove(id);
+
+                if ($scope.editId == id) {
+                    $scope.editId = null;
+                    $scope.name = "";
+                    $scope.m1 = null;
+                    $scope.m2 = null;
+                }
+
+                if ($scope.foundStudent &&
+                    $scope.foundStudent.id == id) {
+                    $scope.foundStudent = null;
+                }
+            };
+
+            $scope.above80 = function(s) {
+                return s.avg >= 80;
+            };
+        });
+    </script>
+
+</body>
+</html>

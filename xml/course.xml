@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="course.xsl"?>
+<!DOCTYPE course SYSTEM "course.dtd">
+<course cid="C101">
+  <code>CS101</code>
+  <name>Data Structures</name>
+  <credits>4</credits>
+  <students>
+    <student sid="S1">
+      <regno>21CS001</regno>
+    </student>
+    <student sid="S2">
+      <regno>21CS002</regno>
+    </student>
+  </students>
+</course>

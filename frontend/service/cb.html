@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html ng-app="myapp">
+<head>
+    <title>Book Management System</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-animate.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+        }
+
+        input {
+            margin: 5px;
+            padding: 8px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 7px 12px;
+            cursor: pointer;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Animation when a book is added */
+        tr.ng-enter {
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+
+        tr.ng-enter-active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 0.8s ease;
+        }
+
+        /* Animation when a book is deleted */
+        tr.ng-leave {
+            opacity: 1;
+        }
+
+        tr.ng-leave-active {
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+    </style>
+</head>
+
+<body ng-controller="myctl">
+
+    <h2>Book Management System</h2>
+
+    <h3>Add / Update Book</h3>
+
+    <input type="text" ng-model="title" placeholder="Book Title">
+    <input type="text" ng-model="author" placeholder="Author Name">
+    <input type="number" ng-model="price" placeholder="Book Price">
+
+    <button ng-click="save()">Save Book</button>
+
+    <hr>
+
+    <h3>Search Book by ID</h3>
+
+    <input type="number" ng-model="searchId" placeholder="Enter Book ID">
+    <button ng-click="search()">Search</button>
+
+    <div ng-if="foundBook">
+        <p>ID: {{foundBook.id}}</p>
+        <p>Title: {{foundBook.title}}</p>
+        <p>Author: {{foundBook.author}}</p>
+        <p>Price: {{foundBook.price}}</p>
+    </div>
+
+    <p ng-if="searched && !foundBook">Book not found!</p>
+
+    <hr>
+
+    <h3>Book List</h3>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Price</th>
+            <th>Actions</th>
+        </tr>
+
+        <tr ng-repeat="b in books track by b.id">
+            <td>{{b.id}}</td>
+            <td>{{b.title}}</td>
+            <td>{{b.author}}</td>
+            <td>{{b.price}}</td>
+            <td>
+                <button ng-click="edit(b)">Edit</button>
+                <button ng-click="remove(b.id)">Delete</button>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        var app = angular.module("myapp", ["ngAnimate"]);
+
+        // Service
+        app.service("bookservice", function() {
+            var books = [];
+            var nextId = 1;
+
+            this.add = function(book) {
+                book.id = nextId++;
+                books.push(book);
+            };
+
+            this.get = function() {
+                return books;
+            };
+
+            this.searchById = function(id) {
+                for (var i = 0; i < books.length; i++) {
+                    if (books[i].id == id) {
+                        return books[i];
+                    }
+                }
+                return null;
+            };
+
+            this.update = function(id, newBook) {
+                var b = this.searchById(id);
+
+                if (b) {
+                    b.title = newBook.title;
+                    b.author = newBook.author;
+                    b.price = newBook.price;
+                }
+            };
+
+            this.remove = function(id) {
+                for (var i = 0; i < books.length; i++) {
+                    if (books[i].id == id) {
+                        books.splice(i, 1);
+                        return;
+                    }
+                }
+            };
+        });
+
+        // Controller
+        app.controller("myctl", function($scope, bookservice) {
+            $scope.books = bookservice.get();
+            $scope.editId = null;
+            $scope.foundBook = null;
+            $scope.searched = false;
+
+            $scope.save = function() {
+                if (!$scope.title ||
+                    !$scope.author ||
+                    $scope.price == null ||
+                    $scope.price === "") {
+                    alert("Please enter all book details");
+                    return;
+                }
+
+                var book = {
+                    title: $scope.title,
+                    author: $scope.author,
+                    price: Number($scope.price)
+                };
+
+                if ($scope.editId === null) {
+                    bookservice.add(book);
+                } else {
+                    bookservice.update($scope.editId, book);
+                }
+
+                $scope.title = "";
+                $scope.author = "";
+                $scope.price = null;
+                $scope.editId = null;
+            };
+
+            $scope.search = function() {
+                $scope.searched = true;
+                $scope.foundBook =
+                    bookservice.searchById($scope.searchId);
+            };
+
+            $scope.edit = function(b) {
+                $scope.editId = b.id;
+                $scope.title = b.title;
+                $scope.author = b.author;
+                $scope.price = b.price;
+            };
+
+            $scope.remove = function(id) {
+                bookservice.remove(id);
+
+                if ($scope.editId == id) {
+                    $scope.editId = null;
+                    $scope.title = "";
+                    $scope.author = "";
+                    $scope.price = null;
+                }
+
+                if ($scope.foundBook &&
+                    $scope.foundBook.id == id) {
+                    $scope.foundBook = null;
+                }
+            };
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+==== To host 
+python -m http.server 8000
+http://localhost:8000/course.xml
+
+
+=== To validate
+
+pip install lxml
+python validate.py
+
+=== To transform
+
+python transform.py
+
+
+=== For formatter
+
+i.)with website
+
+1.copy xml code
+2.search "online formatter" or "xml beatifier" in chrome
+3. paste the code and click "format" or "beatify"
+4. copy the code in chrome and paste in .xml file
+
+ ====    Important: keep the top lines  === 
+after format in online check this line are present or not if not add it in the top
+
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="course.xsl"?>
+<!DOCTYPE course SYSTEM "course.dtd">
+
+ii.)without website
+
+ install  Red Hat XML extension 
+ open course.xml and press "Shift + Alt + F".
+
+ 

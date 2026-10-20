@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+<html ng-app="bookApp">
+<head>
+    <title>Book Management</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f4f6f9;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin: 3px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #dbeafe;
+        }
+
+        .message {
+            margin: 12px 5px;
+            font-weight: 600;
+        }
+
+        .message.success {
+            color: #16a34a;
+        }
+
+        .message.error {
+            color: #dc2626;
+        }
+    </style>
+</head>
+
+<body ng-controller="BookController">
+
+    <h2>Book Management System</h2>
+
+    <form ng-submit="saveBook()">
+        <input type="text"
+               ng-model="book.title"
+               placeholder="Book Title"
+               required>
+
+        <input type="text"
+               ng-model="book.author"
+               placeholder="Author"
+               required>
+
+        <input type="number"
+               ng-model="book.price"
+               placeholder="Price"
+               min="0"
+               required>
+
+        <input type="text"
+               ng-model="book.category"
+               placeholder="Category"
+               required>
+
+        <button type="submit">
+            {{ editId ? 'Update Book' : 'Add Book' }}
+        </button>
+
+        <button type="button"
+                ng-click="cancelEdit()"
+                ng-if="editId">
+            Cancel
+        </button>
+    </form>
+
+    <p class="message" ng-class="{'error': isError, 'success': !isError}" ng-if="message">{{ message }}</p>
+
+    <h3>Book List</h3>
+
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Price</th>
+            <th>Category</th>
+            <th>Actions</th>
+        </tr>
+
+        <tr ng-repeat="b in books">
+            <td>{{ b.title }}</td>
+            <td>{{ b.author }}</td>
+            <td>{{ b.price }}</td>
+            <td>{{ b.category }}</td>
+            <td>
+                <button ng-click="editBook(b)">Edit</button>
+                <button ng-click="deleteBook(b._id)">Delete</button>
+            </td>
+        </tr>
+
+        <tr ng-if="books.length === 0">
+            <td colspan="5">No books found</td>
+        </tr>
+    </table>
+
+    <script>
+        var app = angular.module("bookApp", []);
+
+        app.controller("BookController", function($scope, $http) {
+
+            var api = "http://localhost:3000/books";
+
+            $scope.books = [];
+            $scope.book = {};
+            $scope.editId = null;
+            $scope.message = "";
+            $scope.isError = false;
+
+            // READ
+            $scope.loadBooks = function() {
+                $http.get(api).then(function(response) {
+                    $scope.books = response.data;
+                }, function(err) {
+                    $scope.isError = true;
+                    $scope.message = "Unable to load books: " + (err.data && err.data.error ? err.data.error : (err.status ? "HTTP " + err.status : "Server unreachable"));
+                });
+            };
+
+            // CREATE or UPDATE
+            $scope.saveBook = function() {
+
+                if ($scope.editId) {
+                    $http.put(api + "/" + $scope.editId, $scope.book)
+                        .then(function() {
+                            $scope.isError = false;
+                            $scope.message = "Book updated successfully";
+                            $scope.cancelEdit();
+                            $scope.loadBooks();
+                        }, function(err) {
+                            $scope.isError = true;
+                            $scope.message = "Failed to update book: " + (err.data && err.data.error ? err.data.error : (err.status ? "HTTP " + err.status : "Network error"));
+                        });
+
+                } else {
+                    $http.post(api, $scope.book)
+                        .then(function() {
+                            $scope.isError = false;
+                            $scope.message = "Book added successfully";
+                            $scope.book = {};
+                            $scope.loadBooks();
+                        }, function(err) {
+                            $scope.isError = true;
+                            $scope.message = "Failed to add book: " + (err.data && err.data.error ? err.data.error : (err.status ? "HTTP " + err.status : "Network error"));
+                        });
+                }
+            };
+
+            // EDIT
+            $scope.editBook = function(b) {
+                $scope.book = {
+                    title: b.title,
+                    author: b.author,
+                    price: b.price,
+                    category: b.category
+                };
+
+                $scope.editId = b._id;
+            };
+
+            // CANCEL EDIT
+            $scope.cancelEdit = function() {
+                $scope.book = {};
+                $scope.editId = null;
+            };
+
+            // DELETE
+            $scope.deleteBook = function(id) {
+                if (confirm("Do you want to delete this book?")) {
+                    $http.delete(api + "/" + id)
+                        .then(function() {
+                            $scope.isError = false;
+                            $scope.message = "Book deleted successfully";
+
+                            if ($scope.editId === id) {
+                                $scope.cancelEdit();
+                            }
+
+                            $scope.loadBooks();
+                        }, function(err) {
+                            $scope.isError = true;
+                            $scope.message = "Failed to delete book: " + (err.data && err.data.error ? err.data.error : (err.status ? "HTTP " + err.status : "Network error"));
+                        });
+                }
+            };
+
+            // Load books when page opens
+            $scope.loadBooks();
+        });
+    </script>
+
+</body>
+</html>

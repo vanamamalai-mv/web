@@ -1,0 +1,9 @@
+<!ELEMENT course (code, name, credits, students)>
+<!ATTLIST course cid ID #REQUIRED>
+<!ELEMENT code (#PCDATA)>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT credits (#PCDATA)>
+<!ELEMENT students (student*)>
+<!ELEMENT student (regno)>
+<!ATTLIST student sid ID #REQUIRED>
+<!ELEMENT regno (#PCDATA)>

@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html ng-app="myapp">
+<head>
+    <title>Task Management using Service</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+
+<body ng-controller="myctl">
+
+    <h2>Task Management System</h2>
+
+    <h3>Add / Update Task</h3>
+
+    <input type="text" ng-model="taskName"
+           placeholder="Enter task name">
+
+    <input type="text" ng-model="description"
+           placeholder="Enter description">
+
+    <button ng-click="save()">Save Task</button>
+
+    <hr>
+
+    <h3>Search Task by ID</h3>
+
+    <input type="number" ng-model="searchId"
+           placeholder="Enter task ID">
+
+    <button ng-click="search()">Search</button>
+
+    <div ng-if="foundTask">
+        <p>ID: {{foundTask.id}}</p>
+        <p>Task: {{foundTask.taskName}}</p>
+        <p>Description: {{foundTask.description}}</p>
+        <p>Status: {{foundTask.completed ? 'Completed' : 'Pending'}}</p>
+    </div>
+
+    <p ng-if="searched && !foundTask">Task not found!</p>
+
+    <hr>
+
+    <h3>Task List</h3>
+
+    <table border="1" cellpadding="8">
+        <tr>
+            <th>ID</th>
+            <th>Task Name</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+
+        <tr ng-repeat="t in tasks track by t.id">
+            <td>{{t.id}}</td>
+            <td>{{t.taskName}}</td>
+            <td>{{t.description}}</td>
+            <td>
+                {{t.completed ? 'Completed' : 'Pending'}}
+            </td>
+            <td>
+                <button ng-click="edit(t)">Edit</button>
+
+                <button ng-click="toggle(t)">
+                    {{t.completed ? 'Mark Pending' : 'Complete'}}
+                </button>
+
+                <button ng-click="remove(t.id)">Delete</button>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        var app = angular.module("myapp", []);
+
+        // Service
+        app.service("taskservice", function() {
+            var tasks = [];
+            var nextId = 1;
+
+            this.add = function(task) {
+                task.id = nextId++;
+                tasks.push(task);
+            };
+
+            this.get = function() {
+                return tasks;
+            };
+
+            this.searchById = function(id) {
+                for (var i = 0; i < tasks.length; i++) {
+                    if (tasks[i].id == id) {
+                        return tasks[i];
+                    }
+                }
+                return null;
+            };
+
+            this.update = function(id, data) {
+                var t = this.searchById(id);
+
+                if (t) {
+                    t.taskName = data.taskName;
+                    t.description = data.description;
+                }
+            };
+
+            this.remove = function(id) {
+                for (var i = 0; i < tasks.length; i++) {
+                    if (tasks[i].id == id) {
+                        tasks.splice(i, 1);
+                        return;
+                    }
+                }
+            };
+
+            this.toggle = function(id) {
+                var t = this.searchById(id);
+
+                if (t) {
+                    t.completed = !t.completed;
+                }
+            };
+        });
+
+        // Controller
+        app.controller("myctl", function($scope, taskservice) {
+            $scope.tasks = taskservice.get();
+            $scope.editId = null;
+            $scope.foundTask = null;
+            $scope.searched = false;
+
+            $scope.save = function() {
+                if (!$scope.taskName || !$scope.description) {
+                    alert("Please enter task name and description");
+                    return;
+                }
+
+                var task = {
+                    taskName: $scope.taskName,
+                    description: $scope.description
+                };
+
+                if ($scope.editId === null) {
+                    task.completed = false;
+                    taskservice.add(task);
+                } else {
+                    taskservice.update($scope.editId, task);
+                }
+
+                $scope.taskName = "";
+                $scope.description = "";
+                $scope.editId = null;
+            };
+
+            $scope.search = function() {
+                $scope.searched = true;
+                $scope.foundTask =
+                    taskservice.searchById($scope.searchId);
+            };
+
+            $scope.edit = function(t) {
+                $scope.editId = t.id;
+                $scope.taskName = t.taskName;
+                $scope.description = t.description;
+            };
+
+            $scope.toggle = function(t) {
+                taskservice.toggle(t.id);
+            };
+
+            $scope.remove = function(id) {
+                taskservice.remove(id);
+
+                if ($scope.editId == id) {
+                    $scope.editId = null;
+                    $scope.taskName = "";
+                    $scope.description = "";
+                }
+
+                if ($scope.foundTask &&
+                    $scope.foundTask.id == id) {
+                    $scope.foundTask = null;
+                }
+            };
+        });
+    </script>
+
+</body>
+</html>

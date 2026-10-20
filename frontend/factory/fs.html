@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html ng-app="myapp">
+<head>
+    <title>Student Management using Factory</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+
+<body ng-controller="myctl">
+
+    <h2>Student Management System</h2>
+
+    <h3>Add / Update Student</h3>
+
+    <input type="text" ng-model="name" placeholder="Student Name">
+    <input type="number" ng-model="m1" placeholder="Mark 1">
+    <input type="number" ng-model="m2" placeholder="Mark 2">
+
+    <button ng-click="save()">Save Student</button>
+
+    <hr>
+
+    <h3>Search Student by ID</h3>
+
+    <input type="number" ng-model="searchId" placeholder="Enter ID">
+    <button ng-click="search()">Search</button>
+
+    <div ng-if="foundStudent">
+        <p>ID: {{foundStudent.id}}</p>
+        <p>Name: {{foundStudent.name}}</p>
+        <p>Mark 1: {{foundStudent.m1}}</p>
+        <p>Mark 2: {{foundStudent.m2}}</p>
+        <p>Average: {{foundStudent.avg}}</p>
+    </div>
+
+    <p ng-if="searched && !foundStudent">Student not found!</p>
+
+    <hr>
+
+    <h3>Student List</h3>
+
+    <table border="1" cellpadding="8">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Mark 1</th>
+            <th>Mark 2</th>
+            <th>Average</th>
+            <th>Actions</th>
+        </tr>
+
+        <tr ng-repeat="s in students track by s.id">
+            <td>{{s.id}}</td>
+            <td>{{s.name}}</td>
+            <td>{{s.m1}}</td>
+            <td>{{s.m2}}</td>
+            <td>{{s.avg}}</td>
+            <td>
+                <button ng-click="edit(s)">Edit</button>
+                <button ng-click="remove(s.id)">Delete</button>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        var app = angular.module("myapp", []);
+
+        // Factory
+        app.factory("myfactory", function() {
+            var students = [];
+            var nextId = 1;
+
+            return {
+                add: function(s) {
+                    s.id = nextId++;
+                    students.push(s);
+                },
+
+                get: function() {
+                    return students;
+                },
+
+                searchById: function(id) {
+                    for (var i = 0; i < students.length; i++) {
+                        if (students[i].id == id) {
+                            return students[i];
+                        }
+                    }
+                    return null;
+                },
+
+                update: function(id, data) {
+                    var s = this.searchById(id);
+
+                    if (s) {
+                        s.name = data.name;
+                        s.m1 = data.m1;
+                        s.m2 = data.m2;
+                        s.avg = data.avg;
+                    }
+                },
+
+                remove: function(id) {
+                    for (var i = 0; i < students.length; i++) {
+                        if (students[i].id == id) {
+                            students.splice(i, 1);
+                            return;
+                        }
+                    }
+                }
+            };
+        });
+
+        // Controller
+        app.controller("myctl", function($scope, myfactory) {
+
+            $scope.students = myfactory.get();
+            $scope.editId = null;
+            $scope.foundStudent = null;
+            $scope.searched = false;
+
+            $scope.save = function() {
+                if (!$scope.name ||
+                    $scope.m1 == null || $scope.m1 === "" ||
+                    $scope.m2 == null || $scope.m2 === "") {
+                    alert("Please enter all student details");
+                    return;
+                }
+
+                var student = {
+                    name: $scope.name,
+                    m1: Number($scope.m1),
+                    m2: Number($scope.m2),
+                    avg: (Number($scope.m1) + Number($scope.m2)) / 2
+                };
+
+                if ($scope.editId === null) {
+                    myfactory.add(student);
+                } else {
+                    myfactory.update($scope.editId, student);
+                }
+
+                $scope.name = "";
+                $scope.m1 = null;
+                $scope.m2 = null;
+                $scope.editId = null;
+            };
+
+            $scope.search = function() {
+                $scope.searched = true;
+                $scope.foundStudent =
+                    myfactory.searchById($scope.searchId);
+            };
+
+            $scope.edit = function(s) {
+                $scope.editId = s.id;
+                $scope.name = s.name;
+                $scope.m1 = s.m1;
+                $scope.m2 = s.m2;
+            };
+
+            $scope.remove = function(id) {
+                myfactory.remove(id);
+
+                if ($scope.editId == id) {
+                    $scope.editId = null;
+                    $scope.name = "";
+                    $scope.m1 = null;
+                    $scope.m2 = null;
+                }
+
+                if ($scope.foundStudent &&
+                    $scope.foundStudent.id == id) {
+                    $scope.foundStudent = null;
+                }
+            };
+        });
+    </script>
+
+</body>
+</html>
